@@ -1,0 +1,160 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <title>HTML from API Gateway/Lambda</title>
+    <style>
+        .dropdown {
+            float: left;
+        }
+    </style>
+    <script>
+        window.onload = function() {
+            const environment = window.location.pathname.replace(/\//g, '');
+            const descriptionFilter = {
+                flow: "",
+                product: ""
+            };
+            const extraSampleIdentifier = document.getElementById("extraSampleIdentifier");
+            const patchTestDataSetId = document.getElementById("patchTestDataSetId");
+            const patchTestDataSetSubmit = document.getElementById("patchTestDataSetSubmit");
+            const getPatchOutput = document.getElementById("getPatchOutput");
+            const useTestDataSetId = document.getElementById("useTestDataSetId");
+            const useTestDataSetSubmit = document.getElementById("useTestDataSetSubmit");
+            const getUseOutput = document.getElementById("getUseOutput");
+            const useTestDataSetList = document.getElementById("useTestDataSetList");
+            const token = localStorage.getItem("token");
+            (function() {
+                const options = {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": token
+                    }
+                };
+                fetch(`/${environment}/samples/`, options).then(res => res.text()).then(data => {
+                    const responce = JSON.parse(data);
+                    let inner = `<button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Choose Data set`
+                    inner += `<span class="caret"></span></button><ul class="dropdown-menu">`;
+                    responce.forEach(item => {
+                        inner += `<li class="datasetitem" data-sample-id="${item.id}" data-sample-description="${item.description}"><a href="#">${item.id} ${item.description}</a></li>`
+                    });
+                    inner += `</ul>`;
+                    useTestDataSetList.innerHTML = inner;
+                    document.querySelectorAll('.datasetitem').forEach(item => {
+                        item.addEventListener('click', function() {
+                            document.getElementById("useTestDataSetId").value = this.getAttribute("data-sample-id");
+                        })
+                    });
+                    document.querySelectorAll(".datasetflowitem").forEach(flow => {
+                        flow.addEventListener("click", function() {
+                            descriptionFilter.flow = flow.textContent.toLowerCase();
+                            document.querySelectorAll('.datasetitem').forEach(item => {
+                                item.style.display = Object.values(descriptionFilter).every(filter => item.getAttribute("data-sample-description").toLowerCase().includes(filter.toLowerCase()))
+                                    ? 'block'
+                                    : 'none';
+                            });
+                            document.getElementById("flowDropdown").textContent = `Flow (${flow.textContent})`;
+                        });
+                    });
+                    document.querySelectorAll(".datasetproductitem").forEach(product => {
+                        product.addEventListener("click", function() {
+                            descriptionFilter.product = product.textContent.toLowerCase();
+                            document.querySelectorAll('.datasetitem').forEach(item => {
+                                item.style.display = Object.values(descriptionFilter).every(filter => item.getAttribute("data-sample-description").toLowerCase().includes(filter.toLowerCase()))
+                                    ? 'block'
+                                    : 'none';
+                            });
+                            document.getElementById("productDropdown").textContent = `Product (${product.textContent})`;
+                        });
+                    })
+                });
+            })();
+
+            function patchIdentifier() {
+                const valueToAdd = extraSampleIdentifier.value;
+                const options = {
+                    method: "PATCH",
+                    body: valueToAdd,
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": token
+                    }
+                };
+                fetch(`/${environment}/samples/${patchTestDataSetId.value}`, options).then(res => res.text()).then(data => {
+                    getPatchOutput.innerText = JSON.parse(data).message;
+                });
+            }
+            function useIdentifier() {
+                const options = {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": token
+                    }
+                };
+                fetch(`/${environment}/samples/${useTestDataSetId.value.toLowerCase()}/use`, options).then(res => res.text()).then(data => {
+                    const parsedResponse = JSON.parse(data);
+                    getUseOutput.innerText = `You can use identifier '${parsedResponse.sampleName}' that was created at '${parsedResponse.dto}'`;
+                });
+            }
+            patchTestDataSetSubmit.addEventListener("click", patchIdentifier);
+            useTestDataSetSubmit.addEventListener("click", useIdentifier);
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Update and read samples</h1>
+    </div>
+    <div class="container">
+        <h3>PATCH sample</h3>
+        <form>
+            <div class="form-group well">
+                <label for="extraSampleIdentifier">New Identifier</label>
+                <input id="extraSampleIdentifier" class="form-control">
+                <label for="patchTestDataSetId">For Test data set</label>
+                <input id="patchTestDataSetId" class="form-control" placeholder="hipr-1-1">
+                <br>
+                <button type="button" id="patchTestDataSetSubmit" class="btn btn-info btn-block">SUBMIT</button>
+                <br>
+                <div id="getPatchOutput" class="well"></div>
+            </div>
+        </form>
+        <h3>USE sample</h3>
+        <form>
+            <div class="form-group well">
+                <label for="useTestDataSetId">For Test data set</label>
+                <input id="useTestDataSetId" class="form-control" placeholder="hipr-1-1">
+                <div id="useTestDataSetList" class="dropdown">
+
+                </div>
+                <div class="dropdown">
+                    <button id="flowDropdown" class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Flow
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li class="datasetflowitem"><a href="#">Clinical</a></li>
+                        <li class="datasetflowitem"><a href="#">Pharma</a></li>
+                    </ul>
+                </div>
+                <div class="dropdown">
+                    <button id="productDropdown" class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Product
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li class="datasetproductitem"><a href="#">Product1</a></li>
+                        <li class="datasetproductitem"><a href="#">Product2</a></li>
+                    </ul>
+                </div>
+                <br>
+                <button type="button" id="useTestDataSetSubmit" class="btn btn-info btn-block">USE ONE</button>
+                <br>
+                <div id="getUseOutput" class="well"></div>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
