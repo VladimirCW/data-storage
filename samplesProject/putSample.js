@@ -21,39 +21,12 @@ exports.handler = async (event, context) => {
             const secretKey = (await parameterStore.getParameter(paramsSSM).promise()).Parameter.Value;
             //-------------------
             jwt.verify(token, secretKey);
-            const parsedBody = JSON.parse(event.body);
-            const documentClient = new AWS.DynamoDB.DocumentClient({region: "us-east-2"});
 
-            const params = {
-                TableName: `${event.stageVariables["DB_ENV"]}_samples`,
-                Key: {
-                    id: event.pathParameters.id
-                },
-                UpdateExpression: "set description = :m, sampleNames = :sn",
-                ExpressionAttributeValues: {
-                    ":m": parsedBody.description || "",
-                    ":sn": typeof parsedBody.sampleName === "string"  
-                        ? [
-                            {
-                                sampleName: parsedBody.sampleName,
-                                dto: Date.now()
-                            }
-                        ]
-                        : parsedBody.sampleName.map(i => {
-                            return {
-                                sampleName: i,
-                                dto: Date.now()
-                            };
-                        })
-                },
-                ReturnValues: "ALL_NEW"
-            };
-            let data;
-            try{
-                data = await documentClient.update(params).promise();
+            const data = await dbManager.createSample(event.stageVariables["DB_ENV"], event.pathParameters.id, JSON.parse(event.body));
+            if(data.status === "success") {
                 response.statusCode = 204;
                 response.body = JSON.stringify(data);
-            } catch(err) {
+            } else {
                 console.log(err);
                 response.statusCode = 400;
                 response.body = JSON.stringify({"message": "Error while updating element"});

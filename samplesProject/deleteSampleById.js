@@ -1,6 +1,7 @@
 'use strict'
 const AWS = require('aws-sdk');
 const jwt = require('jsonwebtoken');
+const dbManager = require('./utils/db/dbManager');
 
 AWS.config.update({region: "us-east-2"});
 
@@ -21,20 +22,12 @@ exports.handler = async (event, context) => {
             const secretKey = (await parameterStore.getParameter(paramsSSM).promise()).Parameter.Value;
             //-------------------
             jwt.verify(token, secretKey);
-            const documentClient = new AWS.DynamoDB.DocumentClient({region: "us-east-2"});
-
-            const params = {
-                TableName: "testTable",
-                Key: {
-                    id: event.pathParameters.id
-                }
-            };
-            let data;
-            try{
-                data = await documentClient.delete(params).promise();
+        
+            const data = await dbManager.deleteSampleById(event.stageVariables["DB_ENV"], event.pathParameters.id);
+            if(data.status === "success") {
                 response.statusCode = 204;
                 response.body = JSON.stringify(data);
-            } catch(err) {
+            } else {
                 console.log(err);
                 response.statusCode = 400;
                 response.body = JSON.stringify({"message": "Error while deleting element"});

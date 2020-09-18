@@ -1,6 +1,7 @@
 'use strict'
 const AWS = require('aws-sdk');
 const jwt = require('jsonwebtoken');
+const dbManager = require('./utils/db/dbManager');
 AWS.config.update({region: "us-east-2"});
 
 exports.handler = async (event, context) => {
@@ -20,21 +21,10 @@ exports.handler = async (event, context) => {
             const secretKey = (await parameterStore.getParameter(paramsSSM).promise()).Parameter.Value;
             //-------------------
             jwt.verify(token, secretKey);
-            const documentClient = new AWS.DynamoDB.DocumentClient({region: "us-east-2"});
-            const params = {
-                TableName: `${event.stageVariables["DB_ENV"]}_samples`
-            };
-            
-            let data;
-        
-            try{
-                data = await documentClient.scan(params).promise();
-            } catch(err) {
-                console.log(err);
-            }
-
+    
+            const data = await dbManager.getAllSamples(event.stageVariables["DB_ENV"]);
             response.statusCode = 200;
-            response.body = JSON.stringify(data.Items);
+            response.body = JSON.stringify(data);
         } catch(err) {
             response.statusCode = 403;
             response.body = JSON.stringify({"message": "User is not authorized. Can't verify the token."});

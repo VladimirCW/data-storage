@@ -1,6 +1,7 @@
 'use strict'
 const AWS = require('aws-sdk');
 const jwt = require('jsonwebtoken');
+const dbManager = require('./utils/db/dbManager');
 
 AWS.config.update({region: "us-east-2"});
 
@@ -21,19 +22,7 @@ exports.handler = async (event, context) => {
             const secretKey = (await parameterStore.getParameter(paramsSSM).promise()).Parameter.Value;
             //-------------------
             jwt.verify(token, secretKey);
-            const documentClient = new AWS.DynamoDB.DocumentClient({region: "us-east-2"});
-            const params = {
-                TableName: `${event.stageVariables["DB_ENV"]}_samples`,
-                Key: {
-                    id: event.pathParameters.id
-                }
-            };
-            let data;
-            try{
-                data = await documentClient.get(params).promise();
-            } catch(err) {
-                console.log(err);
-            }
+            const data = await dbManager.getSampleByID(event.stageVariables["DB_ENV"], event.pathParameters.id);
             response.statusCode = 200;
             response.body = JSON.stringify(data.Item);
         } catch(err) {

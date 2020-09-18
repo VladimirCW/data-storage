@@ -1,16 +1,16 @@
 'use strict'
 const AWS = require('aws-sdk');
 const jwt = require('jsonwebtoken');
+const dbManager = require('./utils/db/dbManager');
 
 AWS.config.update({region: "us-east-2"});
 
 exports.handler = async (event) => {
     const reqBody = JSON.parse(event.body);
     const response = {};
-    const documentClient = new AWS.DynamoDB.DocumentClient({region: "us-east-2"});
     
     if(reqBody.login) {
-        const userDataFromDb = (await getUserByLogin(documentClient, reqBody.login)).Item || {};
+        const userDataFromDb = (await dbManager.getUserByLogin(req.login)) || {};
         const {login, password} = userDataFromDb;
         //GET jwtSekretKey---
         const parameterStore = new AWS.SSM();
@@ -36,20 +36,4 @@ exports.handler = async (event) => {
     }
 
     return response;
-}
-
-async function getUserByLogin (documentClient, login) {
-    const params = {
-        TableName: "data-storage-users",
-        Key: {
-            login
-        }
-    };
-    let data;
-    try{
-        data = await documentClient.get(params).promise();
-    } catch(err) {
-        console.log(err);
-    }
-    return data;
 }
