@@ -24,7 +24,7 @@ exports.handler = async (event, context) => {
             jwt.verify(token, secretKey);
             const data = await dbManager.getSampleByID(event.stageVariables["DB_ENV"], event.pathParameters.id);
             response.statusCode = 200;
-            response.body = JSON.stringify(data.Item);
+            response.body = JSON.stringify(data);
         } catch(err) {
             response.statusCode = 403;
             response.body = JSON.stringify({"message": "User is not authorized"});

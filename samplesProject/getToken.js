@@ -10,7 +10,7 @@ exports.handler = async (event) => {
     const response = {};
     
     if(reqBody.login) {
-        const userDataFromDb = (await dbManager.getUserByLogin(req.login)) || {};
+        const userDataFromDb = (await dbManager.getUserByLogin(reqBody.login)) || {};
         const {login, password} = userDataFromDb;
         //GET jwtSekretKey---
         const parameterStore = new AWS.SSM();

@@ -56,7 +56,7 @@ module.exports.createSample = async(stage, id, parsedBody) => {
     return await dynamoDbConnector.update(params);
 }
 
-module.export.deleteSampleById = async (stage, id) => {
+module.exports.deleteSampleById = async (stage, id) => {
     const params = {
         TableName: `${stage}${process.env["IDENTIFIERS_TABE"]}`,
         Key: {
@@ -65,4 +65,19 @@ module.export.deleteSampleById = async (stage, id) => {
     };
 
     return await dynamoDbConnector.delete(params);
+}
+
+module.exports.updateSampleById = async (stage, id, bodyFromDbAsArray) => {
+    const params = {
+        TableName: `${stage}${process.env["IDENTIFIERS_TABE"]}`,
+        Key: {
+            id: id.toLowerCase()
+        },
+        UpdateExpression: "set sampleNames = :n",
+        ExpressionAttributeValues: {
+            ":n": bodyFromDbAsArray
+        },
+        ReturnValues: "ALL_NEW"
+    };
+    return await dynamoDbConnector.update(params);
 }

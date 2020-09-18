@@ -5,11 +5,11 @@ const documentClient = new AWS.DynamoDB.DocumentClient({region: "us-east-2"});
 module.exports.getItem = async (params) => {
     let data;
     try{
-        data = (await documentClient.get(params).promise()).Item;
+        data = (await documentClient.get(params).promise());
     } catch(err) {
         console.log(err);
     }
-    return data;
+    return data.Item;
 }
 
 module.exports.scan = async (params) => {

@@ -1,6 +1,7 @@
 'use strict'
 const AWS = require('aws-sdk');
 const jwt = require('jsonwebtoken');
+const dbManager = require('./utils/db/dbManager');
 
 AWS.config.update({region: "us-east-2"});
 
